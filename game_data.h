@@ -1,9 +1,9 @@
 #ifndef GAME_DATA_H
 #define GAME_DATA_H
 
-#include "pokemon.h"
-#include <vector>
-#include <map>
+#include "pokemon.h" // Includes vector, string via pokemon.h
+#include <map>      
+
 using namespace std;
 
 // Global storage for all available Pokemon "templates"
@@ -17,6 +17,5 @@ void initializeGameData();
 // Helper to get a fresh copy of a Pokemon from the database
 Pokemon getPokemonFromDB(int id);
 Pokemon getPokemonFromDB(const string& name);
-
 
 #endif // GAME_DATA_H
