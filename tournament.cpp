@@ -1,11 +1,13 @@
 #include "tournament.h"
 #include "battle_logic.h" // For startBattle
 #include "utils.h"        // For getIntInput, clearScreen
-#include <iostream>
-#include <algorithm> // For std::shuffle, std::remove_if
-using namespace std;
+#include <iostream>       // For cout, endl
+#include <algorithm>      // For shuffle (std::shuffle becomes shuffle)
+#include <vector>         // For vector
+#include <string>         // For string
 
-void displayBracket(const vector<Player*>& players, const string& roundName) {
+
+void displayBracket( vector<Player*>& players,string& roundName) {
     cout << "\n--- Tournament Bracket: " << roundName << " ---" << endl;
     if (players.empty()) {
         cout << "No players in this round." << endl;
@@ -16,73 +18,60 @@ void displayBracket(const vector<Player*>& players, const string& roundName) {
         if (i + 1 < players.size()) {
             cout << " vs " << players[i+1]->name << endl;
         } else {
-            cout << " (BYE)" << endl; // Player gets a bye
+            cout << " (BYE)" << endl;
         }
     }
     cout << "------------------------------------" << endl;
 }
 
-vector<Player*> runTournamentRound(vector<Player*>& contestants, int teamSize, const string& roundName) {
+vector<Player*> runTournamentRound(vector<Player*>& contestants, int teamSize, string& roundName) {
     cout << "\n--- Starting " << roundName << " (Team Size: " << teamSize << ") ---" << endl;
     vector<Player*> winners;
 
-    // Optional: Shuffle contestants for random pairings if not a seeded tournament
-    // random_device rd;
-    // mt19937 g(rd());
-    // shuffle(contestants.begin(), contestants.end(), g);
+    // For bare minimum, shuffling can be optional.
+    // random_device rd_tourney;
+    // mt19937 g_tourney(rd_tourney());
+    // shuffle(contestants.begin(), contestants.end(), g_tourney);
 
     displayBracket(contestants, roundName);
     getIntInput("Press Enter to begin the round...",0,0);
 
-
     for (size_t i = 0; i < contestants.size(); i += 2) {
-        clearScreen();
-        if (i + 1 < contestants.size()) { // Standard match
+        // clearScreen(); // Optional
+        if (i + 1 < contestants.size()) {
             Player* p1 = contestants[i];
             Player* p2 = contestants[i+1];
 
             cout << "\nMatch: " << p1->name << " vs " << p2->name << endl;
-            cout << p1->name << ", prepare your team of " << teamSize << " Pokemon!" << endl;
-            p1->chooseActivePokemonForBattle(teamSize);
-            cout << p2->name << ", prepare your team of " << teamSize << " Pokemon!" << endl;
+            cout << p1->name << ", your active team for this " << teamSize << "v" << teamSize << " battle:" << endl;
+            p1->chooseActivePokemonForBattle(teamSize); // Ensure active team is set/confirmed
+            cout << p2->name << ", your active team for this " << teamSize << "v" << teamSize << " battle:" << endl;
             p2->chooseActivePokemonForBattle(teamSize);
 
-            // Ensure first Pokemon are set correctly based on active choices
-            p1->currentPokemon = p1->getFirstAvailablePokemon();
-            p2->currentPokemon = p2->getFirstAvailablePokemon();
-
+            p1->currentPokemon = p1->getFirstAvailablePokemon(); // Crucial to set current from active
+            p2->currentPokemon = p2->getFirstAvailablePokemon(); // Crucial to set current from active
 
             Player* matchWinner = startBattle(*p1, *p2);
 
             if (matchWinner) {
                 cout << "\n" << matchWinner->name << " wins the match and advances!" << endl;
                 winners.push_back(matchWinner);
-
-                // Pokemon Center for the winner
-                cout << matchWinner->name << ", would you like to heal your Pokemon at the Pokemon Center? (y/n): ";
+                cout << matchWinner->name << ", would you like to heal your Pokemon? (y/n): ";
                 char healChoice;
                 cin >> healChoice;
-                cin.ignore(numeric_limits<streamsize>::max(), '\n'); // consume newline
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 if (healChoice == 'y' || healChoice == 'Y') {
                     matchWinner->healParty();
                 }
-
-                // Allow winner to change Pokemon for the next round (if there is one)
-                // This logic is more for *between* rounds, but can be offered.
-                // The actual choosing happens at the start of the *next* runTournamentRound call.
-                 cout << matchWinner->name << ", you can adjust your team before the next round." << endl;
-
-
             } else {
-                // Handle draws - for simplicity, maybe a coin flip or re-match, or one advances arbitrarily
-                cout << "The match was a draw! For simplicity, " << p1->name << " advances (implement better draw resolution)." << endl;
-                winners.push_back(p1); // Arbitrary winner on draw for now
-                p1->healParty(); // Heal the 'winner'
+                cout << "The match was a draw! Arbitrarily, " << p1->name << " advances (improve draw logic)." << endl;
+                winners.push_back(p1);
+                p1->healParty();
             }
-             // Option for loser to heal
             Player* loser = (matchWinner == p1) ? p2 : p1;
-            if (matchWinner == nullptr) loser = p2; // If draw, p2 is arbitrarily loser for healing prompt
-            cout << "\n" << loser->name << ", would you like to heal your Pokemon at the Pokemon Center? (y/n): ";
+            if(matchWinner == nullptr) loser = p2; // arbitrary loser for healing prompt on draw
+
+            cout << "\n" << loser->name << ", would you like to heal your Pokemon post-match? (y/n): ";
             char loserHealChoice;
             cin >> loserHealChoice;
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -91,11 +80,10 @@ vector<Player*> runTournamentRound(vector<Player*>& contestants, int teamSize, c
             }
 
 
-        } else { // Player gets a bye
+        } else {
             Player* pBye = contestants[i];
-            cout << "\n" << pBye->name << " gets a bye and advances to the next round!" << endl;
+            cout << "\n" << pBye->name << " gets a bye and advances!" << endl;
             winners.push_back(pBye);
-            // Offer Pokemon Center
             cout << pBye->name << ", would you like to heal your Pokemon? (y/n): ";
             char healChoice;
             cin >> healChoice;
@@ -104,55 +92,58 @@ vector<Player*> runTournamentRound(vector<Player*>& contestants, int teamSize, c
                 pBye->healParty();
             }
         }
-        if (contestants.size() > 1) getIntInput("Press Enter to continue to the next match/result...",0,0);
+        if (contestants.size() > 1 && i+2 <= contestants.size()) getIntInput("Press Enter for the next match...",0,0);
     }
     return winners;
 }
 
 void startTournament(vector<Player>& allRegisteredPlayers) {
-    clearScreen();
-    cout << "--- POKEMON TOURNAMENT ---" << endl;
+    // clearScreen(); // Optional
+    cout << "--- POKEMON TOURNAMENT ---" << std::endl;
     if (allRegisteredPlayers.size() < 2) {
         cout << "Not enough players for a tournament (minimum 2 required)." << endl;
         return;
     }
 
-    vector<Player*> currentContestants;
-    for(Player& p : allRegisteredPlayers) {
-        currentContestants.push_back(&p); // Store pointers to original player objects
+    vector<Player*> currentContestantsPointers;
+    for(Player& p_ref : allRegisteredPlayers) { // Use reference
+        currentContestantsPointers.push_back(&p_ref);
     }
 
-    // --- Part 1: 3 Pokemon Battles ---
-    vector<Player*> winnersPart1 = runTournamentRound(currentContestants, 3, "Round 1 (3v3)");
+    // Part 1: 3 Pokemon Battles
+    vector<Player*> winnersPart1 = runTournamentRound(currentContestantsPointers, 3, "Round 1 (3v3)");
 
     if (winnersPart1.size() <= 1) {
         if (!winnersPart1.empty()) {
-            cout << "\n🏆🏆🏆 The Grand Winner of the Tournament (Part 1) is " << winnersPart1[0]->name << "! 🏆🏆🏆" << endl;
-            winnersPart1[0]->money += 1000; // Tournament prize
+            cout << "\n🏆🏆🏆 The Winner of Part 1 is " << winnersPart1[0]->name << "! 🏆🏆🏆" << endl;
+            winnersPart1[0]->money += 1000;
             cout << winnersPart1[0]->name << " received $1000!" << endl;
         } else {
-            cout << "The first part of the tournament concluded without a clear winner." << endl;
+            cout << "Part 1 concluded without a clear winner." << endl;
         }
-        getIntInput("Press Enter to return to the main menu...",0,0);
-        return;
+        // For bare minimum, we can end tournament here if only one part is desired or if part 2 is too complex initially.
+        // getIntInput("Press Enter to return to menu...",0,0);
+        // return;
     }
 
-    // --- Part 2: 6 Pokemon Battles ---
-    cout << "\n\n--- Preparing for Part 2: 6v6 Battles! ---" << endl;
-    getIntInput("Press Enter to continue...",0,0);
+    // Part 2: 6 Pokemon Battles (only if winners from Part 1 exist and are > 1)
+    if (winnersPart1.size() > 1) {
+        cout << "\n\n--- Preparing for Part 2: 6v6 Battles! ---" << endl;
+        getIntInput("Press Enter to continue...",0,0);
+        vector<Player*> finalWinners = runTournamentRound(winnersPart1, 6, "Final Round (6v6)"); // winnersPart1 is already vector<Player*>
 
-    vector<Player*> finalContestants = winnersPart1; // Winners from part 1 proceed
-    vector<Player*> finalWinners = runTournamentRound(finalContestants, 6, "Final Round (6v6)");
+        if (!finalWinners.empty() && finalWinners.size() == 1) {
+            cout << "\n🏆🏆🏆 The ULTIMATE Grand Winner of the Tournament is " << finalWinners[0]->name << "! 🏆🏆🏆" << endl;
+            finalWinners[0]->money += 2500;
+            cout << finalWinners[0]->name << " received an additional $2500!" << endl;
+        } else {
+            cout << "The final round concluded." << (finalWinners.empty() ? " No winner." : " Multiple finalists remain.") << endl;
+        }
+    } else if (winnersPart1.size() == 1) {
+        // Already handled above, this block is just for clarity that Part 2 is skipped.
+        cout << "\nTournament concluded after Part 1 as only one winner remained." << endl;
+    }
 
-    if (!finalWinners.empty() && finalWinners.size() == 1) {
-        cout << "\n🏆🏆🏆 The ULTIMATE Grand Winner of the Tournament is " << finalWinners[0]->name << "! 🏆🏆🏆" << endl;
-        finalWinners[0]->money += 2500; // Additional prize for winning part 2
-        cout << finalWinners[0]->name << " received an additional $2500!" << endl;
-    } else if (finalWinners.size() > 1) {
-         cout << "\nThe tournament ended with multiple finalists after Part 2! (Further rounds needed or co-champions)" << endl;
-    }
-    else {
-        cout << "The tournament concluded without a clear winner in the final round." << endl;
-    }
+
     getIntInput("Press Enter to return to the main menu...",0,0);
 }
