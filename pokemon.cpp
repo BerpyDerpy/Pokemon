@@ -1,6 +1,6 @@
 #include "pokemon.h"
-#include <iostream>
-using namespace std;
+#include <iostream> // For cout, endl
+
 
 void Pokemon::displaySummary() const {
     cout << name << " (" << type1 << (type2.empty() ? "" : "/" + type2) << ") - HP: " << currentHP << "/" << maxHP << (isFainted ? " (Fainted)" : "");
@@ -33,8 +33,8 @@ void Pokemon::learnMove(const Move& move) {
 void Pokemon::heal() {
     currentHP = maxHP;
     isFainted = false;
-    for (Move& move : moveset) {
-        move.currentPP = move.maxPP;
+    for (Move& move_ref : moveset) { 
+        move_ref.currentPP = move_ref.maxPP;
     }
     cout << name << " has been fully healed!" << endl;
 }
