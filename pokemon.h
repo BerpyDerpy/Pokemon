@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 #include "move.h" // Pokemon has moves
-using namespace std;
+using namespace std; 
 
 struct Pokemon {
     string name;
