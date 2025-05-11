@@ -1,11 +1,12 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <random>
-#include <string>
-#include <vector>
-#include <iostream>
-#include <limits> // Required for std::numeric_limits
+#include <string> 
+#include <vector> 
+#include <iostream> 
+#include <limits>  
+#include <random>  // For random - std:: removed
+using namespace std;
 
 // For clearing the console (basic, platform-dependent)
 void clearScreen();
@@ -14,6 +15,6 @@ void clearScreen();
 int getRandomInt(int min, int max);
 
 // Get integer input from the user with basic validation
-int getIntInput(const std::string& prompt, int minRange, int maxRange);
+int getIntInput(const string& prompt, int minRange, int maxRange);
 
 #endif // UTILS_H
